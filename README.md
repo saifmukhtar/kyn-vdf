@@ -4,7 +4,7 @@
 
 **A pure Rust, WebAssembly-native Wesolowski Verifiable Delay Function (VDF) verifier over Imaginary Quadratic Class Groups.**
 
-[![Crates.io](https://img.shields.io/badge/crates.io-v0.1.0-orange.svg)](https://crates.io/crates/kyn-vdf)
+[![Crates.io](https://img.shields.io/crates/v/kyn-vdf.svg)](https://crates.io/crates/kyn-vdf)
 [![Documentation](https://docs.rs/kyn-vdf/badge.svg)](https://docs.rs/kyn-vdf)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE-MIT)
 [![WASM Ready](https://img.shields.io/badge/wasm-ready-brightgreen.svg)](#webassembly-support)
@@ -125,11 +125,10 @@ Directly manipulate binary quadratic forms $(a, b, c)$ with Shanks' NUCOMP/NUDUP
 ```rust
 use kyn_vdf::math::Form;
 use kyn_vdf::chia::create_discriminant;
-use num_bigint::BigInt;
 
 fn main() {
     let seed = b"kyn-vdf-seed";
-    let discriminant = create_discriminant(seed, 1024);
+    let discriminant = create_discriminant(seed, 1024).expect("valid seed");
 
     // Canonical generator element (2, 1, c)
     let g = Form::generator(&discriminant).expect("valid generator");
