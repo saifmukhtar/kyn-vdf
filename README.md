@@ -109,7 +109,7 @@ use kyn_vdf::chia::create_discriminant;
 use num_bigint::BigInt;
 
 fn main() {
-    let seed = b"kinetic-class-group-seed";
+    let seed = b"kyn-vdf-seed";
     let discriminant = create_discriminant(seed, 1024);
 
     // Canonical generator element (2, 1, c)

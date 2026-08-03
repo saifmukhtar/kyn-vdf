@@ -2,10 +2,11 @@
 name = "kyn-vdf"
 version = "0.1.0"
 edition = "2021"
-authors = ["Kinetic Network Contributors <dev@kinetic.network>"]
+authors = ["Saif Mukhtar <saifmukhtar20@gmail.com>"]
 description = "Pure Rust, WASM-compatible Wesolowski Verifiable Delay Function (VDF) verifier over Imaginary Quadratic Class Groups"
 license = "Apache-2.0"
-repository = "https://github.com/kinetic-network/kyn-vdf"
+repository = "https://github.com/saifmukhtar/kyn-vdf"
+homepage = "https://github.com/saifmukhtar/kyn-vdf"
 readme = "README.md"
 keywords = ["vdf", "wesolowski", "class-groups", "cryptography", "wasm"]
 categories = ["cryptography", "wasm", "algorithms", "no-std"]
