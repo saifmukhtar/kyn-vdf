@@ -21,7 +21,7 @@ fn main() {
     // Warmup round
     let _ = verify_chia_vdf(&challenge, &proof, iters, 1024).unwrap();
 
-    let runs = 50;
+    let runs = 1000;
     let mut success = true;
 
     let t0 = Instant::now();

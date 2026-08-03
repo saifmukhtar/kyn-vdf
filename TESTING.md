@@ -91,6 +91,8 @@ To test raw performance on your desktop machine:
 cargo run --release --example native_bench
 ```
 
+*Note: Desktop benchmarks were executed on an **11th Gen Intel(R) Core(TM) i5-11400H @ 2.70GHz** processor with 16GB RAM.*
+
 ### Mobile Native (ADB Shell on Android)
 To test the raw performance of an Android ARM64 processor without the overhead of Flutter, you can cross-compile the Rust binary and execute it directly in the Android shell.
 
@@ -111,3 +113,8 @@ To test the raw performance of an Android ARM64 processor without the overhead o
    adb shell chmod +x /data/local/tmp/native_bench
    adb shell /data/local/tmp/native_bench
    ```
+
+*Note: The native benchmarks resulting in ~300ms verification times were executed on a **Nothing A059P** smartphone with 8GB RAM. It is powered by a **Qualcomm SM7635 (Snapdragon) Octa-Core Processor** featuring:*
+* *- 1x Prime Core @ 2.49 GHz*
+* *- 3x Performance Cores @ 2.40 GHz*
+* *- 4x Efficiency Cores @ 1.80 GHz*
