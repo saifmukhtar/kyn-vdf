@@ -1,3 +1,43 @@
+# Rust build output
 /target
+debug/
+
+# Rust backup files (rustfmt)
 **/*.rs.bk
+
+# Windows debug symbols
+*.pdb
+
+# Cargo.lock — omitted for libraries (see https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html)
 Cargo.lock
+
+# Criterion benchmark HTML reports
+criterion/
+
+# Fuzzing artifacts
+fuzz/target/
+fuzz/corpus/
+fuzz/artifacts/
+fuzz/coverage/
+
+# IDEs
+.vscode/
+.idea/
+*.iml
+
+# OS Files
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+[Dd]esktop.ini
+
+# Editor swap/temp files
+*.swp
+*.swo
+*~
+
+# Environment files
+.env
+.env.local
