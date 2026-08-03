@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>kyn-vdf Browser Benchmark</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        .result { padding: 20px; border-radius: 8px; background: #f0f4f8; margin-bottom: 20px; font-family: monospace; white-space: pre-wrap;}
+        button { background: #0070f3; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        button:disabled { background: #ccc; }
+    </style>
+</head>
+<body>
+    <h1>kyn-vdf Browser Benchmark</h1>
+    <p>This runs the exact same Wesolowski verification in pure WebAssembly, directly in your browser.</p>
+    
+    <button id="runBtn" disabled>Loading WASM...</button>
+    <div style="margin-top: 10px;">
+        <label>Runs: <select id="runsSelect">
+            <option value="50">50</option>
+            <option value="500">500</option>
+            <option value="1000">1,000</option>
+            <option value="10000">10,000 (Warning: ~40 mins)</option>
+        </select></label>
+    </div>
+    <div id="output" class="result">Waiting to run...</div>
+
+    <script type="module">
+        import init, { verifyChiaVdf } from './pkg/kyn_vdf.js';
+
+        // T=100,000 iteration test vector for reality-check scaling
+        const challengeHex = "4242424242424242424242424242424242424242424242424242424242424242";
+        const proofHex = "02006659312e4ea7fb4f6025f86cbcd40713613855024758762ee6752a61364aa11c855bf57478e053e9835c401a9f634d56543ba9641fe9939fc35ba3c9988c1e271d2727918ddfd5737b767f925af9c3cf1a51bfef842b090a33b12bf8922a4800010003000a7fe150d493b2687904b6a5b43874c125721085835cb4deaf0a25b4cbba6ca804d9136f53fb82ea9b5616261c5570bdccc9bc0522d738a8782b1eb3b3f81e2addb772e745324b0645b93f1a5eaf28ed4b63c46cc5b98454d04ebc85a788822d0100";
+        const iters = 100000n; // iterations as a BigInt/u64
+
+        function fromHexString(hexString) {
+            return new Uint8Array(hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+        }
+
+        const challenge = fromHexString(challengeHex);
+        const proof = fromHexString(proofHex);
+
+        async function run() {
+            const out = document.getElementById('output');
+            const btn = document.getElementById('runBtn');
+            const runsSelect = document.getElementById('runsSelect');
+            
+            try {
+                await init();
+                btn.innerText = 'Run Benchmark';
+                btn.disabled = false;
+
+                btn.onclick = async () => {
+                    const runs = parseInt(runsSelect.value, 10);
+                    btn.disabled = true;
+                    out.innerText = `Running verification (${runs} runs)...\n`;
+                    
+                    // Warmup
+                    verifyChiaVdf(challenge, proof, iters, 1024);
+                    
+                    let success = true;
+                    const t0 = performance.now();
+                    
+                    for(let i = 1; i <= runs; i++) {
+                        const isValid = verifyChiaVdf(challenge, proof, iters, 1024);
+                        if(!isValid) success = false;
+                        
+                        // Yield every 20 runs to keep browser responsive and update progress
+                        if (i % 20 === 0) {
+                            out.innerText = `Progress: ${i} / ${runs} runs completed...`;
+                            await new Promise(r => setTimeout(r, 0));
+                        }
+                    }
+                    const t1 = performance.now();
+                    
+                    const totalTime = t1 - t0;
+                    const avgTime = totalTime / runs;
+                    
+                    out.innerText = `Result: ${success ? '✅ VALID' : '❌ INVALID'}\n`;
+                    out.innerText += `Total time: ${(totalTime / 1000).toFixed(2)} seconds\n`;
+                    out.innerText += `Average time per verification: ${avgTime.toFixed(2)} ms\n`;
+                    out.innerText += `(Measured over ${runs} runs)`;
+                    btn.disabled = false;
+                };
+            } catch (e) {
+                out.innerText = `Error: ${e}`;
+            }
+        }
+        
+        run();
+    </script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>kyn-vdf Tauri Benchmark</title>
+    <script type="module" src="/main.js" defer></script>
+  </head>
+
+  <body>
+    <main class="container">
+      <h1>kyn-vdf Native Benchmark (Tauri)</h1>
+      <p>Measures pure native rust execution via Tauri FFI. T=100,000.</p>
+
+      <div class="row">
+        <label>Runs: 
+          <select id="runsSelect">
+            <option value="50">50</option>
+            <option value="500">500</option>
+            <option value="1000" selected>1,000</option>
+          </select>
+        </label>
+      </div>
+
+      <button id="runBtn" type="button">Run Native Benchmark</button>
+      <p id="output" style="white-space: pre-wrap; text-align: left; background: #1a1a1a; padding: 1rem; border-radius: 8px; margin-top: 1rem;"></p>
+    </main>
+  </body>
+</html>

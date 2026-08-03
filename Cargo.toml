@@ -43,3 +43,11 @@ path = "examples/hardware_bench.rs"
 [[example]]
 name = "extended_bench"
 path = "examples/extended_bench.rs"
+
+[[example]]
+name = "generate_100k_proof"
+path = "examples/generate_100k_proof.rs"
+
+[[example]]
+name = "native_bench"
+path = "examples/native_bench.rs"
