@@ -39,29 +39,39 @@ Until now, the open-source ecosystem lacked a **pure Rust, zero-FFI implementati
 
 ---
 
-## Hardware Benchmarks
+## Benchmarks
 
-The following empirical benchmarks demonstrate the fundamental property of Wesolowski VDFs: **Proving time scales linearly $\mathcal{O}(T)$, while Verification time remains flat and logarithmic $\mathcal{O}(\log T)$**.
+Measured with `cargo bench` on real hardware. Run them yourself with:
 
-### Test Machine Specifications
-- **CPU:** 11th Gen Intel(R) Core(TM) i5-11400H @ 2.70GHz (6 Cores, 12 Threads)
+```bash
+cargo bench
+```
+
+### Test Machine
+- **CPU:** 11th Gen Intel Core i5-11400H @ 2.70GHz (6 Cores, 12 Threads)
 - **RAM:** 16 GB DDR4
 - **OS / Target:** Linux 6.x / `x86_64-unknown-linux-gnu`
-- **Discriminant Size:** 1024-bit fundamental negative prime discriminant $D = -p$ ($p \equiv 7 \pmod 8$)
+- **Discriminant:** 1024-bit fundamental negative prime discriminant $D = -p$
 
-### Empirical Results
+### Class Group Arithmetic (per operation)
 
-| Iterations ($T$) | Prove Time (C++ Reference) | `kyn-vdf` Verify Time (Pure Rust) | Speedup Factor | Pure Rust Valid? | Tamper Rejection? |
-|:---:|:---:|:---:|:---:|:---:|:---:|
-| **100** | $6.57\text{ ms}$ | $42.26\text{ ms}$ | $0.15\times$ | ✅ **PASS** | ✅ **REJECTED** |
-| **1,000** | $17.05\text{ ms}$ | $118.30\text{ ms}$ | $0.14\times$ | ✅ **PASS** | ✅ **REJECTED** |
-| **10,000** | $84.24\text{ ms}$ | $108.70\text{ ms}$ | $0.77\times$ | ✅ **PASS** | ✅ **REJECTED** |
-| **50,000** | $372.96\text{ ms}$ | $109.85\text{ ms}$ | $3.39\times$ | ✅ **PASS** | ✅ **REJECTED** |
-| **100,000** | $733.85\text{ ms}$ | $108.20\text{ ms}$ | $6.78\times$ | ✅ **PASS** | ✅ **REJECTED** |
-| **250,000** | $1.81\text{ s}$ | $108.00\text{ ms}$ | $16.76\times$ | ✅ **PASS** | ✅ **REJECTED** |
-| **500,000** | $3.54\text{ s}$ | **$109.71\text{ ms}$** | **$32.26\times$** | ✅ **PASS** | ✅ **REJECTED** |
+| Operation | Time |
+|:---|:---:|
+| NUDUPL squaring (1024-bit) | **~5.08 µs** |
+| NUCOMP composition (1024-bit) | **~4.81 µs** |
 
-> **Note:** At $500,000$ iterations, verification in pure Rust is **$32\times$ faster** than proof generation, validating $100\%$ of authentic proofs and rejecting $100\%$ of malformed/tampered inputs.
+### End-to-End Wesolowski Verification
+
+| Iterations ($T$) | Verify Time (Pure Rust) |
+|:---:|:---:|
+| **100** | ~12.70 ms |
+| **1,000** | ~86.66 ms |
+| **10,000** | ~85.00 ms |
+| **100,000** | ~93.29 ms |
+| **500,000** | ~82.04 ms |
+
+> **Key property confirmed:** Once $T \geq 1{,}000$, verification time is **flat at ~82–93 ms** regardless of how large $T$ grows. This is the $\mathcal{O}(\log T)$ guarantee of Wesolowski VDFs in practice. The 100-iteration case is faster (~13 ms) because $2^{100} < B$, so the Fiat-Shamir challenge $r$ has fewer bits.
+
 
 ---
 
