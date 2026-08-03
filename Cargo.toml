@@ -1,0 +1,31 @@
+[package]
+name = "kyn-vdf"
+version = "0.1.0"
+edition = "2021"
+authors = ["Kinetic Network Contributors <dev@kinetic.network>"]
+description = "Pure Rust, WASM-compatible Wesolowski Verifiable Delay Function (VDF) verifier over Imaginary Quadratic Class Groups"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/kinetic-network/kyn-vdf"
+readme = "README.md"
+keywords = ["vdf", "wesolowski", "class-groups", "cryptography", "wasm"]
+categories = ["cryptography", "wasm", "algorithms", "no-std"]
+
+[dependencies]
+num-bigint = { version = "0.4.6", default-features = false }
+num-traits = { version = "0.2.19", default-features = false }
+num-integer = { version = "0.1.46", default-features = false }
+sha2 = { version = "0.10.8", default-features = false }
+thiserror = "2.0"
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+proptest = "1.6"
+hex = "0.4"
+
+[[bench]]
+name = "vdf_benchmark"
+harness = false
+
+[[example]]
+name = "hardware_bench"
+path = "examples/hardware_bench.rs"
