@@ -41,10 +41,14 @@ Until now, the open-source ecosystem lacked a **pure Rust, zero-FFI implementati
 
 ## Benchmarks
 
-Measured with `cargo bench` on real hardware. Run them yourself with:
+All numbers below are **real measurements** from `cargo bench` and the chiavdf C++ reference prover running on the same machine. Reproduce them yourself:
 
 ```bash
+# Pure Rust verification
 cargo bench
+
+# C++ prove times (requires kinetic-vdf with chiavdf)
+cargo run --release --bin prove_timing -p kinetic-vdf
 ```
 
 ### Test Machine
@@ -60,17 +64,22 @@ cargo bench
 | NUDUPL squaring (1024-bit) | **~5.08 µs** |
 | NUCOMP composition (1024-bit) | **~4.81 µs** |
 
-### End-to-End Wesolowski Verification
+### Prove vs. Verify — Full Comparison
 
-| Iterations ($T$) | Verify Time (Pure Rust) |
-|:---:|:---:|
-| **100** | ~12.70 ms |
-| **1,000** | ~86.66 ms |
-| **10,000** | ~85.00 ms |
-| **100,000** | ~93.29 ms |
-| **500,000** | ~82.04 ms |
+| Iterations ($T$) | chiavdf Prove (C++) | chiavdf Verify (C++) | `kyn-vdf` Verify (Pure Rust) | vs. Prove |
+|:---:|:---:|:---:|:---:|:---:|
+| **100** | 13.77 ms | 14.80 ms | 12.70 ms | ~1× |
+| **1,000** | 24.62 ms | 19.32 ms | 86.66 ms | 0.28× |
+| **10,000** | 90.23 ms | 17.33 ms | 85.00 ms | 1.06× |
+| **100,000** | 742.12 ms | 17.91 ms | 93.29 ms | **7.96×** |
+| **500,000** | 3,577.65 ms | 17.85 ms | 82.04 ms | **43.6×** |
 
-> **Key property confirmed:** Once $T \geq 1{,}000$, verification time is **flat at ~82–93 ms** regardless of how large $T$ grows. This is the $\mathcal{O}(\log T)$ guarantee of Wesolowski VDFs in practice. The 100-iteration case is faster (~13 ms) because $2^{100} < B$, so the Fiat-Shamir challenge $r$ has fewer bits.
+**Reading the table honestly:**
+
+- The C++ chiavdf verifier (~14–19 ms) is faster than `kyn-vdf` (~82–93 ms) — it uses libgmp, an optimized C++ big-integer library. That's the cost of zero FFI and WASM compatibility.
+- Despite being ~5× slower than C++ verify, `kyn-vdf` still verifies **43× faster** than C++ can *prove* at T=500,000.
+- Once $T \geq 1{,}000$, `kyn-vdf` verification is **flat at ~82–93 ms** regardless of how large $T$ grows — confirming the $\mathcal{O}(\log T)$ guarantee.
+- At T=100, pure Rust is actually faster than C++ verify (12.70 ms vs 14.80 ms) because $2^{100} < B$, making $r$ a smaller number.
 
 
 ---
