@@ -1,6 +1,6 @@
 [package]
 name = "kyn-vdf"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 authors = ["Saif Mukhtar <saifmukhtar20@gmail.com>"]
 description = "Pure Rust, WASM-compatible Wesolowski Verifiable Delay Function (VDF) verifier over Imaginary Quadratic Class Groups"
@@ -22,6 +22,7 @@ num-traits = { version = "0.2.19", default-features = false }
 num-integer = { version = "0.1.46", default-features = false }
 sha2 = { version = "0.10.8", default-features = false }
 thiserror = "2.0"
+wasm = "0.0.0"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = "0.2"
