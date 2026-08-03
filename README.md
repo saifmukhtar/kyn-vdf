@@ -37,85 +37,31 @@ Until now, the open-source ecosystem lacked a **pure Rust, zero-FFI implementati
 - **Chia-Compatible:** 100% test-vector compatible with Chia Network's reference 1024-bit class group VDF specification.
 - **Fuzzing & Property Tested:** Hardened with `proptest` and `cargo-fuzz` against malformed inputs and boundary conditions.
 
+> [!IMPORTANT]
 > **Verifier-only by design.** `kyn-vdf` verifies Wesolowski proofs — it does not generate them. Proof generation requires $T$ sequential squarings (the delay itself) and is the job of a native VDF prover node, not a light client. See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the full design rationale.
 
 ---
 
-## Benchmarks
+## Benchmarks & Cross-Platform Performance
 
-All numbers below are **real measurements** from `cargo bench` and the chiavdf C++ reference prover running on the same machine. Reproduce them yourself:
+`kyn-vdf` is heavily optimized for zero-cost abstraction and cross-platform native execution. 
 
-```bash
-# Pure Rust verification
-cargo bench
+We have conducted extensive performance profiling across multiple environments to prove that `kyn-vdf` is ready for production light clients, mobile apps, and desktop validators. By eliminating heavy `libgmp` dependencies, you can now natively verify massive proofs across:
+- **Desktop (x86_64):** Via pure CLI terminal or native Tauri Rust FFI.
+- **Mobile (ARM64):** Inside native Android Termux or via Flutter Dart FFI.
+- **WebAssembly (WASM):** Inside Chromium & Firefox browser sandboxes.
 
-# C++ prove times (requires kinetic-vdf with chiavdf)
-cargo run --release --bin prove_timing -p kinetic-vdf
-```
-
-### Test Machine
-
-| Field | Value |
-|---|---|
-| **CPU** | 11th Gen Intel Core i5-11400H |
-| **Base / Boost Clock** | 2.70 GHz base / 4.10 GHz boost (observed during bench) |
-| **Cores / Threads** | 6 cores, 12 threads |
-| **L3 Cache** | 12 MB |
-| **RAM** | 16 GB DDR4 (8.6 GB available during bench) |
-| **OS** | Fedora 44, Linux kernel 7.1.3-200.fc44.x86_64 |
-| **Target triple** | `x86_64-unknown-linux-gnu` |
-| **Rust profile** | `--release` (optimized, no debug info) |
-| **Discriminant** | 1024-bit fundamental negative prime $D = -p,\; p \equiv 7 \pmod 8$ |
-
-### Class Group Arithmetic (per operation)
-
-| Operation | Time |
-|:---|:---:|
-| NUDUPL squaring (1024-bit) | **~5.08 µs** |
-| NUCOMP composition (1024-bit) | **~4.81 µs** |
-
-### Prove vs. Verify — Full Comparison
-
-| Iterations ($T$) | chiavdf Prove (C++) | chiavdf Verify (C++) | `kyn-vdf` Verify (Pure Rust) | vs. Prove |
-|:---:|:---:|:---:|:---:|:---:|
-| **100** | 13.77 ms | 14.80 ms | 12.70 ms | ~1× |
-| **1,000** | 24.62 ms | 19.32 ms | 86.66 ms | 0.28× |
-| **10,000** | 90.23 ms | 17.33 ms | 85.00 ms | 1.06× |
-| **100,000** | 742.12 ms | 17.91 ms | 93.29 ms | **7.96×** |
-| **500,000** | 3,577.65 ms | 17.85 ms | 82.04 ms | **43.6×** |
-
-**Reading the table honestly:**
-
-- The C++ chiavdf verifier (~14–19 ms) is faster than `kyn-vdf` (~82–93 ms) — it uses libgmp, an optimized C++ big-integer library. That's the cost of zero FFI and WASM compatibility.
-- Despite being ~5× slower than C++ verify, `kyn-vdf` still verifies **43× faster** than C++ can *prove* at T=500,000.
-- Once $T \geq 1{,}000$, `kyn-vdf` verification is **flat at ~82–93 ms** regardless of how large $T$ grows — confirming the $\mathcal{O}(\log T)$ guarantee.
-- At T=100, pure Rust is actually faster than C++ verify (12.70 ms vs 14.80 ms) because $2^{100} < B$, making $r$ a smaller number.
-
-### Extended Benchmark — $O(\log T)$ at Scale (T ≥ 1M)
-
-Run with `cargo run --release --example extended_bench`:
-
-| Iterations ($T$) | Prove time (pure Rust equiv.) | `kyn-vdf` Verify | Speedup vs. Prove |
-|:---:|:---:|:---:|:---:|
-| **1,000,000** | 259,632 ms (4.3 min) | **88.72 ms** | **2,926×** |
-| **2,000,000** | 503,684 ms (8.4 min) | **90.36 ms** | **5,573×** |
-| **5,000,000** | 1,288,749 ms (21.5 min) | **102.25 ms** | **12,603×** |
-
-> **Verification is flat.** From T=500,000 to T=5,000,000 (10× more iterations), verify
-> time increased by only ~20 ms (82 ms → 102 ms). Prove time scaled linearly by 360×.
-> This is the $\mathcal{O}(\log T)$ guarantee demonstrated at real scale.
-
-> **Note on "Prove time (pure Rust equiv.)":** The extended bench pre-computes
-> $y = x^{2^T}$ in pure Rust using `num-bigint`. This is equivalent in work to proving,
-> but slower than the C++ chiavdf prover which uses libgmp and hardware-optimized
-> arithmetic. Real prove times with chiavdf C++ would be ~6–7× faster.
+> [!TIP]
+> **View the full performance report:** Read the comprehensive [BENCHMARKS.md](BENCHMARKS.md) to see how `kyn-vdf` achieves blazing fast **~130ms** verification times natively, and effectively zero FFI overhead when integrated into Flutter or Tauri apps!
 
 
 ---
 
 ## Installation
 
-Add `kyn-vdf` to your `Cargo.toml`:
+`kyn-vdf` is officially published and available on [crates.io](https://crates.io/crates/kyn-vdf).
+
+Add it to your `Cargo.toml`:
 
 ```toml
 [dependencies]
@@ -228,6 +174,12 @@ cargo build --target wasm32-unknown-unknown --release
   cargo +nightly fuzz run fuzz_vdf
   ```
 - **Negative Testing:** Strict validation ensures zero false positives on flipped bits, incorrect iteration counts, or non-reduced forms.
+
+---
+
+## Acknowledgements
+
+This crate is an independent, clean-room Rust implementation, but the mathematical protocols, BQFC serialization logic, and challenge generation algorithms were originally designed and pioneered by **Chia Network**. Full credit for the underlying VDF protocol specification belongs to the original Chia researchers and engineers.
 
 ---
 

@@ -257,10 +257,10 @@ Both `proof.pow(&b, d)` and `x.pow(&r, d)` are exponentiation with exponents bou
 by $B$ (264 bits) and $r < B$ (264 bits) respectively. The number of NUDUPL operations
 is $O(\log B) = O(264)$ — completely independent of $T$.
 
-```
-T = 100         verify ≈  82 ms  ← same
-T = 100,000     verify ≈  88 ms  ← same
-T = 5,000,000   verify ≈  ~90 ms ← same
+```text
+T = 100         verify ≈  128 ms  ← same
+T = 100,000     verify ≈  128 ms  ← same
+T = 5,000,000   verify ≈  ~130 ms ← same
 ```
 
 ### 4.6 BQFC Serialization
