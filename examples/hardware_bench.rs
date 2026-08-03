@@ -38,7 +38,7 @@ fn main() {
     let iters = 100_000u64;
 
     println!("Computing test setup with 1024-bit discriminant...");
-    let d = create_discriminant(&challenge, 1024);
+    let d = create_discriminant(&challenge, 1024).expect("valid seed");
     let x = Form::generator(&d).expect("generator failed");
 
     println!("Generating sample class group element for {} iterations...", iters);

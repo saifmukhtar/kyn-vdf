@@ -5,7 +5,7 @@ use num_bigint::BigUint;
 
 fn bench_class_group_arithmetic(c: &mut Criterion) {
     let challenge = [0x42u8; 32];
-    let d = create_discriminant(&challenge, 1024);
+    let d = create_discriminant(&challenge, 1024).expect("valid seed");
     let x = Form::generator(&d).unwrap();
 
     let mut group = c.benchmark_group("class_group_arithmetic");
@@ -31,7 +31,7 @@ fn bench_class_group_arithmetic(c: &mut Criterion) {
 /// Key property: verify time must be flat (O(log T)) regardless of iteration count.
 fn bench_wesolowski_verification(c: &mut Criterion) {
     let challenge = [0x42u8; 32];
-    let d = create_discriminant(&challenge, 1024);
+    let d = create_discriminant(&challenge, 1024).expect("valid seed");
     let x = Form::generator(&d).unwrap();
 
     // Pre-generate proofs for each iteration count using fast_pow
