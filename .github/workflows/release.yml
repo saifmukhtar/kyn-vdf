@@ -1,0 +1,142 @@
+name: Release
+
+# Triggers on version tags (e.g. v0.1.0, v1.2.3) or manual dispatch.
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release (e.g. v0.1.0)'
+        required: true
+
+permissions:
+  contents: write  # required to create GitHub Releases
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-D warnings"
+
+jobs:
+  # ── Job 1: Native tests ─────────────────────────────────────────────────────
+  test:
+    name: Tests (native)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run tests
+        run: cargo test --release
+
+      - name: Check documentation
+        run: cargo doc --no-deps --all-features
+
+  # ── Job 2: WASM build ───────────────────────────────────────────────────────
+  build-wasm:
+    name: Build WASM binary
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain + wasm32 target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install wasm-opt (Binaryen optimiser)
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y binaryen
+
+      - name: Build WASM (release, cdylib)
+        run: cargo build --target wasm32-unknown-unknown --release
+
+      - name: Optimise with wasm-opt
+        run: |
+          wasm-opt \
+            -Oz \
+            --enable-bulk-memory \
+            -o target/wasm32-unknown-unknown/release/kyn_vdf_opt.wasm \
+            target/wasm32-unknown-unknown/release/kyn_vdf.wasm
+
+      - name: Package release artifacts
+        run: |
+          TAG="${{ github.ref_name }}"
+          [ -z "$TAG" ] && TAG="${{ github.event.inputs.tag }}"
+
+          mkdir -p dist
+
+          # Unoptimised binary
+          cp target/wasm32-unknown-unknown/release/kyn_vdf.wasm \
+             dist/kyn_vdf-${TAG}-wasm32.wasm
+
+          # Optimised binary
+          cp target/wasm32-unknown-unknown/release/kyn_vdf_opt.wasm \
+             dist/kyn_vdf-${TAG}-wasm32-opt.wasm
+
+          # SHA-256 checksums
+          cd dist
+          sha256sum kyn_vdf-${TAG}-wasm32.wasm     > kyn_vdf-${TAG}-wasm32.wasm.sha256
+          sha256sum kyn_vdf-${TAG}-wasm32-opt.wasm > kyn_vdf-${TAG}-wasm32-opt.wasm.sha256
+
+          # Print sizes for the build log
+          echo "--- Binary sizes ---"
+          ls -lh kyn_vdf-${TAG}-wasm32*.wasm
+
+      - name: Upload artifacts (for inspection before release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasm-binaries
+          path: dist/
+          retention-days: 7
+
+      # ── Create the GitHub Release ──────────────────────────────────────────
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name || github.event.inputs.tag }}
+          name: "kyn-vdf ${{ github.ref_name || github.event.inputs.tag }}"
+          generate_release_notes: true
+          body: |
+            ## kyn-vdf ${{ github.ref_name || github.event.inputs.tag }}
+
+            Pure Rust, WASM-compatible Wesolowski VDF verifier over Imaginary Quadratic Class Groups.
+
+            ### WASM Binaries
+
+            | File | Description |
+            |------|-------------|
+            | `kyn_vdf-*-wasm32.wasm` | Standard WASM binary (`cargo build --release`) |
+            | `kyn_vdf-*-wasm32-opt.wasm` | Size-optimised binary (`wasm-opt -Oz`) |
+            | `*.sha256` | SHA-256 checksums |
+
+            ### Usage
+
+            ```rust
+            // In your Cargo.toml
+            kyn-vdf = "${{ github.ref_name || github.event.inputs.tag }}"
+
+            // Verify a Chia-format VDF proof
+            use kyn_vdf::verify_chia_vdf;
+            let valid = verify_chia_vdf(&challenge, &proof_bytes, iterations, 1024)?;
+            ```
+
+            ### Verification
+
+            ```sh
+            sha256sum --check kyn_vdf-*-wasm32-opt.wasm.sha256
+            ```
+          files: |
+            dist/*.wasm
+            dist/*.sha256

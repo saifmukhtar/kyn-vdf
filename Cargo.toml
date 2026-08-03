@@ -11,6 +11,11 @@ readme = "README.md"
 keywords = ["vdf", "wesolowski", "class-groups", "cryptography", "wasm"]
 categories = ["cryptography", "wasm", "algorithms", "no-std"]
 
+[lib]
+# rlib   → standard Rust library (used when depending on this crate)
+# cdylib → produces kyn_vdf.wasm when targeting wasm32-unknown-unknown
+crate-type = ["cdylib", "rlib"]
+
 [dependencies]
 num-bigint = { version = "0.4.6", default-features = false }
 num-traits = { version = "0.2.19", default-features = false }
