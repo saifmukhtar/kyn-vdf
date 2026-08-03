@@ -30,6 +30,9 @@ pub mod chia;
 pub mod error;
 pub mod math;
 
+#[cfg(target_arch = "wasm32")]
+pub mod wasm;
+
 pub use chia::{
     create_discriminant, deserialize_form, get_b, hash_prime, is_probable_prime, serialize_form,
     verify_wesolowski, CompressedForm,

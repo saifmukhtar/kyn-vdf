@@ -176,7 +176,43 @@ fn main() {
 
 ## WebAssembly Support
 
-`kyn-vdf` has zero native dependencies and compiles cleanly to WebAssembly:
+`kyn-vdf` has zero native dependencies and compiles cleanly to WebAssembly.
+
+### For Web Developers (JavaScript / TypeScript)
+
+You can compile this crate into a native NPM package that exposes `verifyChiaVdf` to JavaScript:
+
+```bash
+# Install wasm-pack
+cargo install wasm-pack
+
+# Build the JS/TS package (outputs to ./pkg)
+wasm-pack build --target web
+```
+
+Then in your web app (e.g., React, Vue, Vite, or a browser extension):
+
+```typescript
+import init, { verifyChiaVdf } from './pkg/kyn_vdf.js';
+
+async function run() {
+  await init(); // Initialize the WASM module
+  
+  const challenge = new Uint8Array(32); // e.g. from network
+  const proof = new Uint8Array(200);    // e.g. from network
+  
+  try {
+    const isValid = verifyChiaVdf(challenge, proof, 500000n, 1024);
+    console.log("Proof valid:", isValid);
+  } catch (e) {
+    console.error("Verification failed:", e);
+  }
+}
+```
+
+### Bare WASM (No JS Bindings)
+
+If you are writing a smart contract (e.g. CosmWasm) or don't want the JS wrappers:
 
 ```bash
 cargo build --target wasm32-unknown-unknown --release
