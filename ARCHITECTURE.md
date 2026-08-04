@@ -361,7 +361,7 @@ Both are needed simultaneously to support both use cases from one crate.
 | Capability | Status |
 |---|---|
 | VDF proof generation (proving) | ❌ Not implemented — use `chiavdf` |
-| `wasm-bindgen` JS exports | ❌ Not yet — pure Rust API only |
+| `wasm-bindgen` JS exports | ✅ Implemented via `wasm.rs` (`verifyChiaVdf`) |
 | `no_std` support | ⚠️ Partial — `num-bigint` requires `alloc` |
 | Non-Chia VDF schemes (Pietrzak, RSA) | ❌ Not implemented |
 | Parallel/GPU proving acceleration | ❌ Out of scope |

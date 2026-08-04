@@ -8,7 +8,7 @@
 //! - [`verify_wesolowski`]: the Wesolowski VDF verification equation $\pi^B \cdot x^r = y$.
 //!
 //! All fallible operations return [`KynVdfError`] rather than panicking, ensuring safe
-//! execution in WASM, `no_std`, and adversarial input environments.
+//! execution in WASM and adversarial input environments.
 
 use num_bigint::{BigInt, BigUint, Sign};
 use num_integer::Integer;
@@ -60,9 +60,10 @@ fn isqrt(n: &BigInt) -> Result<BigInt, KynVdfError> {
 
 /// Miller-Rabin probabilistic primality test.
 ///
-/// Uses a fixed set of deterministic small bases (2, 3, 5, …, 37) followed by
-/// additional rounds if `rounds > 12`. For 264-bit numbers, 12 rounds give a
-/// false-positive probability below $4^{-12} \approx 2^{-24}$.
+/// Tests `n` using 12 deterministic small prime bases (2, 3, 5, …, 37) followed by
+/// sequential odd witness bases up to `rounds`. For SHA-256 hash-derived candidate primes,
+/// performing $k = 25$ rounds heuristically bounds the composite false-positive probability
+/// near $4^{-25} \approx 2^{-50}$.
 ///
 /// # Parameters
 /// - `n`: The candidate integer to test (as `BigUint`).
@@ -695,9 +696,7 @@ mod tests {
         let res = create_discriminant(&[1u8; 32], 0);
         assert!(matches!(res, Err(KynVdfError::InvalidDiscriminantSize(0))));
 
-        let res2 = create_discriminant(&[1u8; 32], 100); // not multiple of 8? 100 is multiple of 8
-        // 100 IS a multiple of 8 (100 = 8 * 12 + 4... no wait: 100 / 8 = 12.5, not a whole number)
-        // Actually 100 % 8 = 4, so it's not a multiple of 8
+        let res2 = create_discriminant(&[1u8; 32], 100); // 100 % 8 = 4 (not a multiple of 8)
         assert!(matches!(res2, Err(KynVdfError::InvalidDiscriminantSize(100))));
     }
 }

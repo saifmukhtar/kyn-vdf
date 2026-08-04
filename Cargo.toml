@@ -9,7 +9,7 @@ repository = "https://github.com/saifmukhtar/kyn-vdf"
 homepage = "https://github.com/saifmukhtar/kyn-vdf"
 readme = "README.md"
 keywords = ["vdf", "wesolowski", "class-groups", "cryptography", "wasm"]
-categories = ["cryptography", "wasm", "algorithms", "no-std"]
+categories = ["cryptography", "wasm", "algorithms"]
 
 [lib]
 # rlib   → standard Rust library (used when depending on this crate)
@@ -22,7 +22,6 @@ num-traits = { version = "0.2.19", default-features = false }
 num-integer = { version = "0.1.46", default-features = false }
 sha2 = { version = "0.10.8", default-features = false }
 thiserror = "2.0"
-wasm = "0.0.0"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wasm-bindgen = "0.2"

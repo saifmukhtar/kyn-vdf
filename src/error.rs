@@ -1,8 +1,8 @@
 //! Error types for VDF verification and Class Group arithmetic.
 //!
 //! All public functions in `kyn-vdf` return [`KynVdfError`] on failure rather than
-//! panicking, ensuring the library is safe for use in WASM, `no_std`, and adversarial
-//! input environments.
+//! panicking, ensuring the library is safe for use in WASM and adversarial input
+//! environments.
 
 use thiserror::Error;
 

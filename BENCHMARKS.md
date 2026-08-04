@@ -13,7 +13,7 @@ The following benchmarks demonstrate the extreme efficiency, stability, and scal
 
 To establish a highly rigorous "reality check" representing real-world blockchain consensus protocols, we evaluated a **100,000-iteration test vector** ($T=100,000$). At this massive iteration count, the exponent wraps modulo the 264-bit Fiat-Shamir prime, forcing the verifier to execute the maximum theoretical mathematical work (~264 sequential squarings).
 
-Every environment executed **1,000 continuous verification rounds** in an asynchronous tight loop. This exhaustive testing ensures that our average execution times are highly accurate, while simultaneously verifying the absence of memory leaks and thermal throttling under sustained load.
+Every environment executed **1,000 continuous verification rounds** in an asynchronous tight loop. Each call to `verify_chia_vdf()` measures full end-to-end execution—including discriminant generation, BQFC deserialization, and Wesolowski verification—simulating sustained real-world light-client load on consumer hardware rather than single-run peak burst speeds.
 
 > [!NOTE]  
 > **Strict Release Profiles:** All native and Foreign Function Interface (FFI) benchmarks were strictly compiled using the Rust `--release` profile. The immense speeds showcased below are the direct result of Rust's zero-cost abstractions and aggressive LLVM optimizations (`opt-level = 3`).
