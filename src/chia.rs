@@ -517,6 +517,13 @@ pub fn deserialize_form(d: &BigInt, bytes: &[u8]) -> Result<Form, KynVdfError> {
 
     // Fast path: identity and generator flags bypass full decompression
     if bytes[0] & (BQFC_IS_1 | BQFC_IS_GEN) != 0 {
+        // Enforce canonical wire format: trailing padding bytes must be zero to prevent proof malleability
+        if bytes[1..].iter().any(|&b| b != 0) {
+            return Err(KynVdfError::FormDeserializationError(
+                "Non-canonical wire format: trailing padding bytes in identity/generator form must be zero"
+                    .to_string(),
+            ));
+        }
         let a = if bytes[0] & BQFC_IS_GEN != 0 {
             BigInt::from(2)
         } else {

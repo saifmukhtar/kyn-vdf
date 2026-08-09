@@ -1,0 +1,50 @@
+name: Formal Security Audit
+
+on:
+  schedule:
+    - cron: '0 0 * * 0' # Run weekly
+  workflow_dispatch: # Allow manual trigger
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'tests/**'
+
+jobs:
+  coverage_tarpaulin:
+    name: Tarpaulin Code Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install Tarpaulin
+        run: cargo install cargo-tarpaulin
+      - name: Generate Coverage Report
+        run: cargo tarpaulin --verbose --workspace --timeout 120 --out html
+      - name: Upload Coverage HTML
+        uses: actions/upload-artifact@v3
+        with:
+          name: tarpaulin-report
+          path: tarpaulin-report.html
+
+  miri_undefined_behavior:
+    name: Miri Undefined Behavior Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Rust Nightly with Miri
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: miri
+      - name: Run Miri
+        run: cargo miri test
+
+  kani_formal_verification:
+    name: AWS Kani Formal Proofs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Kani
+        uses: model-checking/kani-github-action@v1.0
+        with:
+          args: --tests
