@@ -12,7 +12,7 @@
 //! - Lipa Long: chiavdf C++ reference implementation
 
 use num_bigint::BigInt;
-use num_traits::{Zero, One, Signed};
+use num_traits::{One, Signed, Zero};
 
 /// Computes $\lfloor \sqrt{\sqrt{n}} \rfloor = \lfloor |D|^{1/4} \rfloor$.
 ///
@@ -527,7 +527,10 @@ mod tests {
 
         // Square
         let sq = f2.square(&d);
-        assert_eq!(sq, Form::new(BigInt::from(4), BigInt::from(-3), BigInt::from(5)));
+        assert_eq!(
+            sq,
+            Form::new(BigInt::from(4), BigInt::from(-3), BigInt::from(5))
+        );
 
         // Compose f2 with itself must equal square
         let comp2 = f2.compose(&f2, &d);

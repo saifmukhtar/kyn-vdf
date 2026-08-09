@@ -42,7 +42,11 @@ fn test_form_identity_and_inversion() {
     assert!(id.is_reduced());
 
     let generator_form = Form::generator(&d).unwrap();
-    let gen_inv = Form::new(generator_form.a.clone(), -generator_form.b.clone(), generator_form.c.clone());
+    let gen_inv = Form::new(
+        generator_form.a.clone(),
+        -generator_form.b.clone(),
+        generator_form.c.clone(),
+    );
 
     // gen * gen^-1 == identity
     let res = generator_form.compose(&gen_inv, &d);

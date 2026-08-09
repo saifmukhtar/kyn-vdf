@@ -1,7 +1,7 @@
+use kyn_vdf::verify_chia_vdf;
 use std::env;
 use std::io::{self, Read};
 use std::time::Instant;
-use kyn_vdf::verify_chia_vdf;
 
 fn main() {
     let args: Vec<String> = env::args().collect();

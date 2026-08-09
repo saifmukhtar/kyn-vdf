@@ -1,12 +1,13 @@
 // tests/kani_proofs.rs
 // Formal verification proofs using AWS Kani.
 // Run with: `cargo kani`
+#![allow(unexpected_cfgs)]
 #![cfg(kani)]
 
 use kyn_vdf::math::{Form, isqrt_fourth};
 use num_bigint::BigInt;
 
-/// Prove that calculating the Shanks L threshold never panics, 
+/// Prove that calculating the Shanks L threshold never panics,
 /// bounds memory, and gracefully handles any integer size.
 #[kani::proof]
 fn prove_isqrt_fourth_safe() {

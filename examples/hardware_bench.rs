@@ -1,8 +1,8 @@
 //! Hardware Benchmark & Verification Engine for `kyn-vdf`.
 
-use std::time::Instant;
 use kyn_vdf::chia::create_discriminant;
 use kyn_vdf::math::Form;
+use std::time::Instant;
 
 fn get_cpu_info() -> String {
     #[cfg(target_os = "linux")]
@@ -41,7 +41,10 @@ fn main() {
     let d = create_discriminant(&challenge, 1024).expect("valid seed");
     let x = Form::generator(&d).expect("generator failed");
 
-    println!("Generating sample class group element for {} iterations...", iters);
+    println!(
+        "Generating sample class group element for {} iterations...",
+        iters
+    );
     let start_pow = Instant::now();
     let y = x.pow(&num_bigint::BigUint::from(2u32).pow(100), &d); // sample form
     println!("Sample generation elapsed: {:?}\n", start_pow.elapsed());
@@ -49,7 +52,12 @@ fn main() {
     println!("================================================================================");
     println!("                           BENCHMARK EXECUTION SUMMARY                          ");
     println!("================================================================================");
-    println!("Class group form representation: ({}, {}, {})", y.a.bits(), y.b.bits(), y.c.bits());
+    println!(
+        "Class group form representation: ({}, {}, {})",
+        y.a.bits(),
+        y.b.bits(),
+        y.c.bits()
+    );
     println!("Algorithm: Shanks' NUCOMP / NUDUPL with Gauss Euclidean Reduction");
     println!("Memory safety: 100% Safe Pure Rust (no unsafe blocks, zero FFI)");
     println!("================================================================================");

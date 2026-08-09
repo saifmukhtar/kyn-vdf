@@ -704,6 +704,9 @@ mod tests {
         assert!(matches!(res, Err(KynVdfError::InvalidDiscriminantSize(0))));
 
         let res2 = create_discriminant(&[1u8; 32], 100); // 100 % 8 = 4 (not a multiple of 8)
-        assert!(matches!(res2, Err(KynVdfError::InvalidDiscriminantSize(100))));
+        assert!(matches!(
+            res2,
+            Err(KynVdfError::InvalidDiscriminantSize(100))
+        ));
     }
 }

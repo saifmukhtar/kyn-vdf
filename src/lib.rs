@@ -34,11 +34,11 @@ pub mod math;
 pub mod wasm;
 
 pub use chia::{
-    create_discriminant, deserialize_form, get_b, hash_prime, is_probable_prime, serialize_form,
-    verify_wesolowski, CompressedForm,
+    CompressedForm, create_discriminant, deserialize_form, get_b, hash_prime, is_probable_prime,
+    serialize_form, verify_wesolowski,
 };
 pub use error::KynVdfError;
-pub use math::{isqrt_fourth, xgcd_partial, Form};
+pub use math::{Form, isqrt_fourth, xgcd_partial};
 
 /// Verifies a Chia-compatible Wesolowski VDF proof from raw byte slices.
 ///
@@ -147,6 +147,11 @@ impl KynVdfVerifier {
         proof_bytes: &[u8],
         iterations: u64,
     ) -> Result<bool, KynVdfError> {
-        verify_chia_vdf(challenge, proof_bytes, iterations, self.discriminant_size_bits)
+        verify_chia_vdf(
+            challenge,
+            proof_bytes,
+            iterations,
+            self.discriminant_size_bits,
+        )
     }
 }

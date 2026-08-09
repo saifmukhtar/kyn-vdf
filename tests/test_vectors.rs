@@ -27,5 +27,8 @@ fn test_known_vector_challenge_42() {
         Ok(v) => v,
         Err(_) => false,
     };
-    assert!(!is_wrong_iter_valid, "Wrong iteration count must be rejected");
+    assert!(
+        !is_wrong_iter_valid,
+        "Wrong iteration count must be rejected"
+    );
 }

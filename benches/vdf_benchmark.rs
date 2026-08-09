@@ -1,4 +1,4 @@
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
 use kyn_vdf::chia::{create_discriminant, get_b, verify_wesolowski};
 use kyn_vdf::math::Form;
 use num_bigint::BigUint;

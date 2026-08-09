@@ -33,7 +33,10 @@ fn main() {
     println!("║        kyn-vdf  ·  Extended Verification Timing (T ≥ 1M)        ║");
     println!("╚══════════════════════════════════════════════════════════════════╝");
     println!("CPU : {}", get_cpu_info());
-    println!("Rust: {}", std::env::var("RUSTUP_TOOLCHAIN").unwrap_or_else(|_| "stable".into()));
+    println!(
+        "Rust: {}",
+        std::env::var("RUSTUP_TOOLCHAIN").unwrap_or_else(|_| "stable".into())
+    );
     println!("Disc: 1024-bit fundamental negative prime discriminant");
     println!();
 
