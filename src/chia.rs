@@ -159,7 +159,7 @@ pub fn hash_prime(
     length_bits: usize,
     bitmask: &[usize],
 ) -> Result<BigUint, KynVdfError> {
-    if length_bits == 0 || length_bits % 8 != 0 {
+    if length_bits == 0 || !length_bits.is_multiple_of(8) {
         return Err(KynVdfError::InvalidDiscriminantSize(length_bits));
     }
 
@@ -226,7 +226,7 @@ pub fn create_discriminant(seed: &[u8], length_bits: usize) -> Result<BigInt, Ky
             "seed must be a non-empty byte slice".to_string(),
         ));
     }
-    if length_bits == 0 || length_bits % 8 != 0 {
+    if length_bits == 0 || !length_bits.is_multiple_of(8) {
         return Err(KynVdfError::InvalidDiscriminantSize(length_bits));
     }
 
@@ -474,7 +474,7 @@ pub fn serialize_form(form: &Form, d_bits: usize) -> Result<Vec<u8>, KynVdfError
     let g_size = if compr.g.is_zero() {
         0
     } else {
-        (g_biguint.bits() as usize + 7) / 8 - 1
+        (g_biguint.bits() as usize).div_ceil(8) - 1
     };
     res[1] = g_size as u8;
 
