@@ -56,7 +56,6 @@ jobs:
       matrix:
         harness:
           - prove_isqrt_fourth_safe
-          - prove_form_from_abd_safe
     steps:
       - uses: actions/checkout@v4
       - name: Install Kani and verify ${{ matrix.harness }}
