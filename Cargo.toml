@@ -11,29 +11,40 @@ readme = "README.md"
 keywords = ["vdf", "wesolowski", "class-groups", "cryptography", "wasm"]
 categories = ["cryptography", "wasm", "algorithms"]
 
+# Own the workspace so nested checkouts are not captured by a parent Cargo.toml.
+[workspace]
+resolver = "2"
+
 [lib]
-# rlib   → standard Rust library (used when depending on this crate)
-# cdylib → produces kyn_vdf.wasm when targeting wasm32-unknown-unknown
-crate-type = ["cdylib", "rlib"]
+# Consensus library is an rlib. Browser JavaScript bindings are an explicit
+# feature so a no_std target is not forced to link wasm-bindgen.
+crate-type = ["rlib"]
+
+[features]
+default = ["std"]
+std = ["thiserror/std"]
+# wasm32-unknown-unknown JavaScript bindings. Not part of the consensus rlib
+# and not used on wasm32v1-none / no_std + alloc.
+browser-wasm = ["dep:wasm-bindgen", "std"]
 
 [dependencies]
 num-bigint = { version = "0.4.6", default-features = false }
 num-traits = { version = "0.2.19", default-features = false }
 num-integer = { version = "0.1.46", default-features = false }
 sha2 = { version = "0.10.8", default-features = false }
-thiserror = "2.0"
-
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-wasm-bindgen = "0.2"
+thiserror = { version = "2.0", default-features = false }
+wasm-bindgen = { version = "0.2", optional = true }
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }
 proptest = "1.6"
 hex = "0.4"
 
-[[bench]]
-name = "vdf_benchmark"
-harness = false
+# Pre-existing examples fail these style lints. They are not used to hide
+# verifier-path issues; lib/tests/benches also pass with `-D warnings`.
+[lints.clippy]
+uninlined_format_args = "allow"
+trim_split_whitespace = "allow"
 
 [[example]]
 name = "hardware_bench"

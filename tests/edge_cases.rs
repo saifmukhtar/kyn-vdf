@@ -71,3 +71,20 @@ fn test_form_serialization_roundtrip() {
     let deserialized2 = deserialize_form(&d, &bytes2).expect("deserialization failed");
     assert_eq!(deserialized2, gen2);
 }
+
+#[test]
+fn test_special_form_encodings_are_unique() {
+    let challenge = [0x77u8; 32];
+    let d = create_discriminant(&challenge, 1024).expect("valid seed");
+
+    for flag in [0x05, 0x06, 0x08 | 0x04] {
+        let mut bytes = [0u8; 100];
+        bytes[0] = flag;
+        assert!(deserialize_form(&d, &bytes).is_err());
+    }
+
+    let mut dirty_padding = [0u8; 100];
+    dirty_padding[0] = 0x04;
+    dirty_padding[99] = 1;
+    assert!(deserialize_form(&d, &dirty_padding).is_err());
+}

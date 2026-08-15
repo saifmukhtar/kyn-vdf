@@ -13,20 +13,21 @@ fn test_known_vector_challenge_42() {
     let is_valid = verify_chia_vdf(&challenge, &proof, iters, 1024).expect("verification errored");
     assert!(is_valid, "Known vector verification must pass");
 
+    // The public API promises exactly 200 bytes; appended data must not be ignored.
+    let mut extended_proof = proof.clone();
+    extended_proof.push(0);
+    assert!(verify_chia_vdf(&challenge, &extended_proof, iters, 1024).is_err());
+
     // 2. Tampered proof rejection
     let mut tampered_proof = proof.clone();
     tampered_proof[50] ^= 0x01;
-    let is_tampered_valid = match verify_chia_vdf(&challenge, &tampered_proof, iters, 1024) {
-        Ok(v) => v,
-        Err(_) => false,
-    };
+    let is_tampered_valid =
+        verify_chia_vdf(&challenge, &tampered_proof, iters, 1024).unwrap_or_default();
     assert!(!is_tampered_valid, "Tampered proof must be rejected");
 
     // 3. Mismatched iteration count rejection
-    let is_wrong_iter_valid = match verify_chia_vdf(&challenge, &proof, iters + 1, 1024) {
-        Ok(v) => v,
-        Err(_) => false,
-    };
+    let is_wrong_iter_valid =
+        verify_chia_vdf(&challenge, &proof, iters + 1, 1024).unwrap_or_default();
     assert!(
         !is_wrong_iter_valid,
         "Wrong iteration count must be rejected"

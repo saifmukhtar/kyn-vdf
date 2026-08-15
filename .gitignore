@@ -8,8 +8,7 @@ debug/
 # Windows debug symbols
 *.pdb
 
-# Cargo.lock — omitted for libraries (see https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html)
-Cargo.lock
+# Cargo.lock is committed so `cargo --locked` reproduces the verifier crate.
 
 # Criterion benchmark HTML reports
 criterion/

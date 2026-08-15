@@ -10,6 +10,7 @@
 //! All fallible operations return [`KynVdfError`] rather than panicking, ensuring safe
 //! execution in WASM and adversarial input environments.
 
+use alloc::{format, string::ToString, vec, vec::Vec};
 use num_bigint::{BigInt, BigUint, Sign};
 use num_integer::Integer;
 use num_traits::{One, Signed, Zero};
@@ -54,7 +55,14 @@ fn isqrt(n: &BigInt) -> Result<BigInt, KynVdfError> {
     if n.is_zero() {
         return Ok(BigInt::zero());
     }
-    let uint_sqrt = n.to_biguint().unwrap().sqrt();
+    let uint_sqrt = n
+        .to_biguint()
+        .ok_or_else(|| {
+            KynVdfError::ArithmeticError(
+                "non-negative coefficient could not be converted to BigUint".to_string(),
+            )
+        })?
+        .sqrt();
     Ok(BigInt::from_biguint(Sign::Plus, uint_sqrt))
 }
 
@@ -105,7 +113,7 @@ pub fn is_probable_prime(n: &BigUint, rounds: usize) -> bool {
 
     // Deterministic bases sufficient for numbers up to ~3.3 × 10^24; extend with more rounds
     let bases = [2u32, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37];
-    let test_rounds = std::cmp::max(rounds, bases.len());
+    let test_rounds = core::cmp::max(rounds, bases.len());
 
     'outer: for i in 0..test_rounds {
         let a = if i < bases.len() {
@@ -177,7 +185,7 @@ pub fn hash_prime(
             }
             let hash = Sha256::digest(&sprout);
             let needed = (length_bits / 8) - blob.len();
-            let take = std::cmp::min(hash.len(), needed);
+            let take = core::cmp::min(hash.len(), needed);
             blob.extend_from_slice(&hash[..take]);
         }
 
@@ -431,6 +439,18 @@ fn import_le(data: &[u8]) -> BigInt {
     BigInt::from_biguint(Sign::Plus, BigUint::from_bytes_le(data))
 }
 
+/// Converts a negative discriminant's magnitude into a bit length.
+fn discriminant_bit_len(d: &BigInt) -> Result<usize, KynVdfError> {
+    d.abs()
+        .to_biguint()
+        .map(|value| value.bits() as usize)
+        .ok_or_else(|| {
+            KynVdfError::ArithmeticError(
+                "discriminant magnitude could not be converted to an unsigned integer".to_string(),
+            )
+        })
+}
+
 /// Serializes a reduced binary quadratic form into Chia's 100-byte BQFC wire format.
 ///
 /// The output is always exactly [`BQFC_FORM_SIZE`] (100) bytes:
@@ -515,16 +535,24 @@ pub fn deserialize_form(d: &BigInt, bytes: &[u8]) -> Result<Form, KynVdfError> {
         });
     }
 
-    // Fast path: identity and generator flags bypass full decompression
+    // Fast path: identity and generator flags bypass full decompression.
+    // The first byte must be exactly one special-form flag: accepting sign
+    // bits, both flags, unknown bits, or nonzero padding would create
+    // multiple encodings for the same form.
     if bytes[0] & (BQFC_IS_1 | BQFC_IS_GEN) != 0 {
-        // Enforce canonical wire format: trailing padding bytes must be zero to prevent proof malleability
+        if bytes[0] != BQFC_IS_1 && bytes[0] != BQFC_IS_GEN {
+            return Err(KynVdfError::FormDeserializationError(
+                "Non-canonical wire format: special-form flag byte must identify exactly one form"
+                    .to_string(),
+            ));
+        }
         if bytes[1..].iter().any(|&b| b != 0) {
             return Err(KynVdfError::FormDeserializationError(
                 "Non-canonical wire format: trailing padding bytes in identity/generator form must be zero"
                     .to_string(),
             ));
         }
-        let a = if bytes[0] & BQFC_IS_GEN != 0 {
+        let a = if bytes[0] == BQFC_IS_GEN {
             BigInt::from(2)
         } else {
             BigInt::from(1)
@@ -533,7 +561,7 @@ pub fn deserialize_form(d: &BigInt, bytes: &[u8]) -> Result<Form, KynVdfError> {
         return Form::from_abd(&a, &b, d).ok_or(KynVdfError::InvalidDiscriminantIdentity);
     }
 
-    let d_bits = d.abs().to_biguint().unwrap().bits() as usize;
+    let d_bits = discriminant_bit_len(d)?;
     let d_bits_rounded = (d_bits + 31) & !31;
 
     let g_size = bytes[1] as usize;
@@ -614,7 +642,7 @@ pub fn deserialize_form(d: &BigInt, bytes: &[u8]) -> Result<Form, KynVdfError> {
 /// # Errors
 /// Propagates [`KynVdfError`] from [`serialize_form`] or [`hash_prime`].
 pub fn get_b(d: &BigInt, x: &Form, y: &Form) -> Result<BigUint, KynVdfError> {
-    let d_bits = d.abs().to_biguint().unwrap().bits() as usize;
+    let d_bits = discriminant_bit_len(d)?;
     let ser_x = serialize_form(x, d_bits)?;
     let ser_y = serialize_form(y, d_bits)?;
 
