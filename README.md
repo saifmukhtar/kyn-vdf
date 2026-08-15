@@ -133,8 +133,13 @@ You can compile this crate into a native NPM package that exposes `verifyChiaVdf
 # Install wasm-pack
 cargo install wasm-pack
 
-# Build the JS/TS package (outputs to ./pkg)
-wasm-pack build --target web --features browser-wasm
+# Build the JS/TS package from the browser adapter crate.
+# --out-name keeps the existing kyn_vdf.js / kyn_vdf.wasm filenames.
+wasm-pack build crates/kyn-vdf-wasm \
+  --target web \
+  --release \
+  --out-name kyn_vdf \
+  --out-dir pkg
 ```
 
 Then in your web app (e.g., React, Vue, Vite, or a browser extension):

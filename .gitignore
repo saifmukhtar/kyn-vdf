@@ -45,3 +45,6 @@ ehthumbs.db
 __pycache__/
 *.pyc
 
+# wasm-pack output
+pkg/
+crates/kyn-vdf-wasm/pkg/

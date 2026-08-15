@@ -1,9 +1,7 @@
-use crate::verify_chia_vdf;
+use kyn_vdf_core::verify_chia_vdf;
 use wasm_bindgen::prelude::*;
 
 /// Verifies a Chia-compatible Wesolowski VDF proof from JavaScript.
-///
-/// Takes JavaScript `Uint8Array`s for the challenge and proof.
 #[wasm_bindgen(js_name = verifyChiaVdf)]
 pub fn verify_vdf_js(
     challenge_seed: &[u8],
@@ -17,5 +15,5 @@ pub fn verify_vdf_js(
         iterations,
         discriminant_size_bits,
     )
-    .map_err(|e| e.to_string())
+    .map_err(|error| error.to_string())
 }

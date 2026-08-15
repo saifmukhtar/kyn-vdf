@@ -382,6 +382,13 @@ dependencies = [
  "proptest",
  "sha2",
  "thiserror",
+]
+
+[[package]]
+name = "kyn-vdf-wasm"
+version = "1.0.0"
+dependencies = [
+ "kyn-vdf",
  "wasm-bindgen",
 ]
 

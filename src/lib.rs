@@ -28,21 +28,13 @@
 //! ```
 
 #![cfg_attr(not(feature = "std"), no_std)]
-// wasm-bindgen expands to FFI unsafe on wasm32 + browser-wasm. The consensus
-// rlib forbids unsafe on every other profile.
-#![cfg_attr(
-    not(all(target_arch = "wasm32", feature = "browser-wasm")),
-    forbid(unsafe_code)
-)]
+#![forbid(unsafe_code)]
 
 extern crate alloc;
 
 pub mod chia;
 pub mod error;
 pub mod math;
-
-#[cfg(all(target_arch = "wasm32", feature = "browser-wasm"))]
-pub mod wasm;
 
 pub use chia::{
     CompressedForm, create_discriminant, deserialize_form, get_b, hash_prime, is_probable_prime,

@@ -14,7 +14,7 @@ The verification math is run continuously in an asynchronous loop within the bro
 
 ### Results
 
-The following benchmark was measured by compiling the project with `wasm-pack build --target web --release` and running the verification equation in a tight loop.
+The following benchmark was measured by compiling the browser adapter with `wasm-pack build crates/kyn-vdf-wasm --target web --release --out-name kyn_vdf` and running the verification equation in a tight loop.
 
 **Firefox Desktop Benchmark:**
 ```text
