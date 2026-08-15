@@ -16,9 +16,10 @@ categories = ["cryptography", "wasm", "algorithms"]
 resolver = "2"
 
 [lib]
-# Consensus library is an rlib. Browser JavaScript bindings are an explicit
-# feature so a no_std target is not forced to link wasm-bindgen.
-crate-type = ["rlib"]
+# The rlib is used by native and no_std consensus consumers. The cdylib keeps
+# wasm-pack/browser output available when the explicit browser-wasm feature is
+# enabled; wasm-bindgen itself remains out of the consensus dependency graph.
+crate-type = ["cdylib", "rlib"]
 
 [features]
 default = ["std"]

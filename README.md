@@ -134,7 +134,7 @@ You can compile this crate into a native NPM package that exposes `verifyChiaVdf
 cargo install wasm-pack
 
 # Build the JS/TS package (outputs to ./pkg)
-wasm-pack build --target web
+wasm-pack build --target web --features browser-wasm
 ```
 
 Then in your web app (e.g., React, Vue, Vite, or a browser extension):
@@ -157,12 +157,15 @@ async function run() {
 }
 ```
 
-### Bare WASM (No JS Bindings)
+### Smart-contract / runtime consumers (no JS bindings)
 
-If you are writing a smart contract (e.g. CosmWasm) or don't want the JS wrappers:
+Smart-contract and consensus runtimes should link the `rlib` without default
+features. The consuming runtime or contract produces the final Wasm artifact;
+this crate does not emit a standalone `.wasm` in that profile.
 
-```bash
-cargo build --target wasm32-unknown-unknown --release
+```toml
+[dependencies]
+kyn-vdf = { version = "1.0", default-features = false }
 ```
 
 ---
