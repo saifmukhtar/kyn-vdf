@@ -3,6 +3,22 @@ use kyn_vdf::chia::{create_discriminant, get_b, verify_wesolowski};
 use kyn_vdf::math::Form;
 use num_bigint::BigUint;
 
+fn verification_iter_counts() -> &'static [u64] {
+    // `cargo test --all-targets` runs this `harness = false` binary. The
+    // measured algorithm is unchanged; only the setup exponent list is
+    // reduced unless Criterion is invoked with `--bench` or
+    // `KYN_VDF_FULL_BENCH` is set. Precomputing `2^500_000` is otherwise
+    // effectively unbounded.
+    const SMOKE: &[u64] = &[100];
+    const FULL: &[u64] = &[100, 1_000, 10_000, 100_000, 500_000];
+    let args: Vec<String> = std::env::args().collect();
+    if args.iter().any(|arg| arg == "--bench") || std::env::var_os("KYN_VDF_FULL_BENCH").is_some() {
+        FULL
+    } else {
+        SMOKE
+    }
+}
+
 fn bench_class_group_arithmetic(c: &mut Criterion) {
     let challenge = [0x42u8; 32];
     let d = create_discriminant(&challenge, 1024).expect("valid seed");
@@ -38,7 +54,7 @@ fn bench_wesolowski_verification(c: &mut Criterion) {
     // proof = x^floor(2^T / B), y = x^(2^T)
     // For benchmarking: we use a fixed pre-computed y and proof
     // so we only measure verify cost, not prove cost.
-    let iter_counts: &[u64] = &[100, 1_000, 10_000, 100_000, 500_000];
+    let iter_counts = verification_iter_counts();
 
     let mut group = c.benchmark_group("wesolowski_verification");
     group.sample_size(20); // verification is slow enough
