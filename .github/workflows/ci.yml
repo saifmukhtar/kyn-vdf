@@ -56,3 +56,10 @@ jobs:
 
     - name: Run Differential Cross-Testing Suite
       run: python scripts/differential_test.py
+
+    - name: Run 50-Round Live C++ Differential Cross-Validation (Tier 1)
+      run: python scripts/live_differential_test.py
+
+    - name: Run Continuous Differential Fuzzer (Tier 4)
+      run: python scripts/differential_fuzzer.py
+

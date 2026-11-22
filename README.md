@@ -4,13 +4,12 @@
 
 **A pure Rust, WebAssembly-native Wesolowski Verifiable Delay Function (VDF) verifier over Imaginary Quadratic Class Groups.**
 
-[![Formal Security Audit](https://github.com/saifmukhtar/kyn-vdf/actions/workflows/audit.yml/badge.svg)](https://github.com/saifmukhtar/kyn-vdf/actions/workflows/audit.yml)
 [![CI Pipeline](https://github.com/saifmukhtar/kyn-vdf/actions/workflows/ci.yml/badge.svg)](https://github.com/saifmukhtar/kyn-vdf/actions/workflows/ci.yml)
 [![Crates.io](https://img.shields.io/crates/v/kyn-vdf.svg)](https://crates.io/crates/kyn-vdf)
 [![Documentation](https://docs.rs/kyn-vdf/badge.svg)](https://docs.rs/kyn-vdf)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE-MIT)
 [![WASM Ready](https://img.shields.io/badge/wasm-ready-brightgreen.svg)](#webassembly-support)
-[![Safety](https://img.shields.io/badge/unsafe-0%25-green.svg)](#security--formal-correctness)
+[![Safety](https://img.shields.io/badge/unsafe-0%25-green.svg)](#cryptographic-correctness--security-validation)
 
 </div>
 
@@ -168,9 +167,9 @@ cargo build --target wasm32-unknown-unknown --release
 
 ---
 
-## 🔒 Cryptographic Correctness & Formal Security
+## 🔒 Cryptographic Correctness & Security Validation
 
-Cryptography is notoriously unforgiving of edge cases. To prove beyond any doubt that `kyn-vdf` is mathematically sound, we employ a rigorous 3-pillar validation strategy:
+Cryptography is notoriously unforgiving of edge cases. To prove that `kyn-vdf` is mathematically sound, we employ a rigorous 3-pillar validation strategy:
 
 ### 1. Differential Cross-Testing against Chia C++ (100% Match)
 We do not rely on assumptions. The `kyn-vdf` repository includes an automated differential testing suite (`scripts/differential_test.py`) that strictly cross-validates our pure Rust engine against the official Chia Network C++ `chiavdf` engine. 
