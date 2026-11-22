@@ -60,15 +60,15 @@ jobs:
           sudo apt-get install -y binaryen
 
       - name: Build WASM (release, cdylib)
-        run: cargo build --target wasm32-unknown-unknown --release
+        run: cargo build --target wasm32-unknown-unknown --release -p kyn-vdf-wasm
 
       - name: Optimise with wasm-opt
         run: |
           wasm-opt \
             -Oz \
             --enable-bulk-memory \
-            -o target/wasm32-unknown-unknown/release/kyn_vdf_opt.wasm \
-            target/wasm32-unknown-unknown/release/kyn_vdf.wasm
+            -o target/wasm32-unknown-unknown/release/kyn_vdf_wasm_opt.wasm \
+            target/wasm32-unknown-unknown/release/kyn_vdf_wasm.wasm
 
       - name: Package release artifacts
         run: |
@@ -78,11 +78,11 @@ jobs:
           mkdir -p dist
 
           # Unoptimised binary
-          cp target/wasm32-unknown-unknown/release/kyn_vdf.wasm \
+          cp target/wasm32-unknown-unknown/release/kyn_vdf_wasm.wasm \
              dist/kyn_vdf-${TAG}-wasm32.wasm
 
           # Optimised binary
-          cp target/wasm32-unknown-unknown/release/kyn_vdf_opt.wasm \
+          cp target/wasm32-unknown-unknown/release/kyn_vdf_wasm_opt.wasm \
              dist/kyn_vdf-${TAG}-wasm32-opt.wasm
 
           # SHA-256 checksums

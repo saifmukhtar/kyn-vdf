@@ -14,10 +14,14 @@ debug/
 criterion/
 
 # Fuzzing artifacts
+fuzz/Cargo.lock
 fuzz/target/
 fuzz/corpus/
 fuzz/artifacts/
 fuzz/coverage/
+
+# Sub-project lockfiles
+bench_apps/**/Cargo.lock
 
 # IDEs
 .vscode/
