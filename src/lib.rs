@@ -12,8 +12,9 @@
 //! - **Chia-Compatible**: 100% test-vector compatible with the Chia Network VDF specification.
 //! - **$\mathcal{O}(\log T)$ Verification**: Verification time is constant with respect to $T$
 //!   (bounded by the 264-bit Fiat-Shamir prime $B$, not the iteration count).
-//! - **No Panics**: All fallible operations return `Result<_, KynVdfError>` — safe for WASM
-//!   and adversarial inputs.
+//! - **Checked errors**: Public verifier APIs return `Result<_, KynVdfError>` for malformed
+//!   inputs. See the panic/allocation inventory in the crate tests and Auver evidence
+//!   package; ordinary tests do not prove the crate is panic-free.
 //!
 //! ## Quick Start
 //! ```rust
@@ -26,12 +27,14 @@
 //! # }
 //! ```
 
+#![cfg_attr(not(feature = "std"), no_std)]
+#![forbid(unsafe_code)]
+
+extern crate alloc;
+
 pub mod chia;
 pub mod error;
 pub mod math;
-
-#[cfg(target_arch = "wasm32")]
-pub mod wasm;
 
 pub use chia::{
     CompressedForm, create_discriminant, deserialize_form, get_b, hash_prime, is_probable_prime,
@@ -65,7 +68,7 @@ pub use math::{Form, isqrt_fourth, xgcd_partial};
 ///
 /// # Errors
 /// - [`KynVdfError::InvalidIterations`] if `iterations == 0`.
-/// - [`KynVdfError::InvalidProofLength`] if `proof_bytes.len() < 200`.
+/// - [`KynVdfError::InvalidProofLength`] if `proof_bytes.len() != 200`.
 /// - [`KynVdfError::InvalidDiscriminantSize`] if `discriminant_size_bits` is invalid.
 /// - [`KynVdfError::FormDeserializationError`] if the proof bytes are corrupted.
 /// - [`KynVdfError::InvalidDiscriminantIdentity`] if a form fails the discriminant check.
@@ -78,7 +81,7 @@ pub fn verify_chia_vdf(
     if iterations == 0 {
         return Err(KynVdfError::InvalidIterations(0));
     }
-    if proof_bytes.len() < 200 {
+    if proof_bytes.len() != 200 {
         return Err(KynVdfError::InvalidProofLength {
             expected: 200,
             actual: proof_bytes.len(),

@@ -347,12 +347,15 @@ Wesolowski soundness error is $1/B$. At 264 bits, this is $\approx 2^{-264}$,
 providing ~128 bits of security for the soundness argument. The prime size is
 fixed by the Chia protocol specification.
 
-### Why `cdylib` + `rlib` crate types?
+### Why two crates?
 
-- `rlib` — standard Rust library linking (used when `kyn-vdf` is a dependency)
-- `cdylib` — produces `kyn_vdf.wasm` when targeting `wasm32-unknown-unknown`
+Cargo cannot feature-gate `[lib] crate-type`. A single library target cannot
+be both a freestanding browser `cdylib` and an allocator-free consensus `rlib`.
 
-Both are needed simultaneously to support both use cases from one crate.
+- `kyn-vdf` — `rlib` only; the consensus / `no_std` dependency
+- `kyn-vdf-wasm` — `cdylib` only; JavaScript adapter via `wasm-bindgen`
+
+`wasm-bindgen` therefore cannot enter the consensus dependency graph.
 
 ---
 
@@ -361,7 +364,7 @@ Both are needed simultaneously to support both use cases from one crate.
 | Capability | Status |
 |---|---|
 | VDF proof generation (proving) | ❌ Not implemented — use `chiavdf` |
-| `wasm-bindgen` JS exports | ✅ Implemented via `wasm.rs` (`verifyChiaVdf`) |
+| `wasm-bindgen` JS exports | ✅ Implemented in `crates/kyn-vdf-wasm` (`verifyChiaVdf`) |
 | `no_std` support | ⚠️ Partial — `num-bigint` requires `alloc` |
 | Non-Chia VDF schemes (Pietrzak, RSA) | ❌ Not implemented |
 | Parallel/GPU proving acceleration | ❌ Out of scope |

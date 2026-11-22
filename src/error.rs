@@ -4,6 +4,7 @@
 //! panicking, ensuring the library is safe for use in WASM and adversarial input
 //! environments.
 
+use alloc::string::String;
 use thiserror::Error;
 
 /// Domain-specific errors returned during Class Group operations and Wesolowski VDF verification.
