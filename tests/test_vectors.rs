@@ -47,7 +47,10 @@ fn test_known_vector_1m_iters() {
 
     // 1. Valid verification at 1M iterations
     let is_valid = verify_chia_vdf(&challenge, &proof, iters, 1024).expect("verification errored");
-    assert!(is_valid, "1,000,000-iteration Chia proof verification must pass");
+    assert!(
+        is_valid,
+        "1,000,000-iteration Chia proof verification must pass"
+    );
 
     // 2. Tampered proof rejection
     let mut tampered_proof = proof.clone();
@@ -68,4 +71,3 @@ fn test_known_vector_1m_iters() {
         "Wrong iteration count (1M + 1) must be rejected"
     );
 }
-
