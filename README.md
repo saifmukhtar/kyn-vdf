@@ -32,11 +32,13 @@ Until now, the open-source ecosystem lacked a **pure Rust, zero-FFI implementati
 ## Key Features
 
 - **Pure Rust / Zero FFI:** Built on safe, arbitrary-precision arithmetic (`num-bigint`). Zero C/C++, GMP, or OS dependencies.
-- **WASM Native:** Compiles out-of-the-box to `wasm32-unknown-unknown` for web browsers and mobile wallets.
-- **Shanks' NUCOMP & NUDUPL:** Implements sub-quadratic binary quadratic form composition and squaring with partial Euclidean reduction.
-- **Asymptotic Verification ($\mathcal{O}(\log T)$):** Verification takes constant logarithmic time (~130ms native, ~380ms in-browser WASM), even when proofs took minutes or hours to generate.
-- **Chia-Compatible:** 100% test-vector compatible with Chia Network's reference 1024-bit class group VDF specification.
-- **Fuzzing & Property Tested:** Hardened with `proptest` and `cargo-fuzz` against malformed inputs and boundary conditions.
+- **`no_std` Consensus Profile:** Supports bare-metal and consensus runtime environments with `default-features = false` (requires `alloc`).
+- **WASM Native:** Compiles cleanly to WebAssembly for web browsers, browser extensions, and mobile light clients via the dedicated `crates/kyn-vdf-wasm` adapter crate.
+- **Shanks' NUCOMP & NUDUPL:** Sub-quadratic composition and squaring of binary quadratic forms with partial Euclidean reduction.
+- **Canonical 200-Byte Wire Format:** Strictly enforces exact 200-byte wire envelopes with zero proof malleability (rejects flag-aliasing, dirty sign bits, trailing garbage, and unflagged special forms).
+- **Asymptotic Verification ($\mathcal{O}(\log T)$):** Verification runs in logarithmic time (~130ms native, ~380ms in-browser WASM) regardless of whether proof generation required thousands or millions of sequential squarings.
+- **Chia-Compatible:** Bit-for-bit differential parity against Chia Network's C++ reference implementation (`chiavdf`) across 1024-bit discriminants and test vectors up to 1,000,000 iterations.
+- **`#![forbid(unsafe_code)]`:** 100% safe Rust with zero undefined behavior.
 
 > [!IMPORTANT]
 > **Verifier-only by design.** `kyn-vdf` verifies Wesolowski proofs — it does not generate them. Proof generation requires $T$ sequential squarings (the delay itself) and is the job of a native VDF prover node, not a light client. See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the full design rationale.
@@ -66,7 +68,13 @@ Add it to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-kyn-vdf = "0.1"
+kyn-vdf = "1.0"
+```
+
+For `no_std` consensus runtimes (requires `alloc`):
+```toml
+[dependencies]
+kyn-vdf = { version = "1.0", default-features = false }
 ```
 
 ---
@@ -177,31 +185,34 @@ kyn-vdf = { version = "1.0", default-features = false }
 
 ## 🔒 Cryptographic Correctness & Security Validation
 
-Cryptography is notoriously unforgiving of edge cases. To prove that `kyn-vdf` is mathematically sound, we employ a rigorous 3-pillar validation strategy:
+Cryptography is notoriously unforgiving of edge cases. To prove that `kyn-vdf` is mathematically sound, robust against adversarial inputs, and free from proof malleability, we employ a 4-pillar validation strategy:
 
-### 1. Differential Cross-Testing against Chia C++ (100% Match)
-We do not rely on assumptions. The `kyn-vdf` repository includes an automated differential testing suite (`scripts/differential_test.py`) that strictly cross-validates our pure Rust engine against the official Chia Network C++ `chiavdf` engine. 
+### 1. Differential Cross-Testing against Chia C++ (100% Bit-for-Bit Parity)
+We do not rely on assumptions. The `kyn-vdf` repository includes automated differential test suites (`scripts/differential_test.py` and `scripts/live_differential_test.py`) that strictly cross-validate our pure Rust engine against the official Chia Network C++ `chiavdf` engine.
 
-The test suite enforces **100% bit-for-bit mathematical parity** and ensures:
-- **Discriminant Derivation Parity**: Seeds produce the exact same 1024-bit primes.
-- **Genuine Proof Validation**: 100-iteration and 100,000-iteration test vectors pass seamlessly.
+The differential test suite enforces:
+- **Discriminant Derivation Parity**: Challenge seeds produce the exact same 1024-bit prime discriminants.
+- **Deep Proof Verification**: Verification of official Chia 100-iteration, 100,000-iteration, and 1,000,000-iteration reference test vectors.
 - **Adversarial Tamper-Resistance**: Any bit flips in the BQFC wire format ($y$ or $\pi$), coefficient tampering, iteration mismatches ($T \pm 1$), or cross-challenge seed swaps are immediately mathematically rejected.
-- **Zero Malleability**: The BQFC deserializer strictly enforces canonical zero-padding for generator/identity flags, defending against proof malleability attacks that plague naive implementations.
 
-### 2. Property-Based Testing (Axiomatic Proofs)
+### 2. Strict Canonical Wire Format & Zero Malleability
+In binary quadratic form serialization (BQFC), naive implementations often suffer from proof malleability (where multiple distinct wire byte arrays deserialize to the same mathematical form). `kyn-vdf` strictly enforces a bijective encoding:
+- **Exact 200-Byte Envelope**: Enforces `proof_bytes.len() == 200`. Proofs with truncated or trailing garbage bytes are rejected.
+- **Flag-Aliasing Defense**: Special-form flag byte `bytes[0]` must strictly identify exactly one form (`BQFC_IS_1` or `BQFC_IS_GEN`). Mixed flags, dirty sign bits, and undefined upper bits (`0xF0`) are rejected.
+- **Bijective Special Form Encoding**: Identity and generator forms encoded without flags through the slow decompression path are rejected.
+- **Padding Validation**: All trailing bytes in sub-1024-bit wire buffers and special-form envelopes must strictly be zero.
+
+### 3. Property-Based Testing (Axiomatic Invariants)
 Using `proptest`, we continuously fuzz the underlying Class Group arithmetic against randomized inputs. This guarantees that Shanks' NUCOMP and NUDUPL reduction algorithms strictly satisfy all **Abelian Group Axioms**:
 - Associativity: $(A \circ B) \circ C == A \circ (B \circ C)$
 - Identity: $A \circ 1 == A$
 - Inverses: $A \circ A^{-1} == 1$
 - Fast Exponentiation Parity: Binary scalar multiplication yields the same canonical reduced form as sequential compositions.
 
-### 3. Continuous Integration & Fuzzing
-Every commit is vetted through strict GitHub Actions CI pipelines:
-- `cargo clippy -- -D warnings` (Strict linting & zero unhandled panics)
-- `cargo-fuzz` (LibFuzzer targeting the BQFC deserialization engine for OOM/panic resistance)
-- **Automated Differential Cross-Validator** (Running the live C++ reference engine in CI)
-
-`kyn-vdf` is proudly written with **`#![forbid(unsafe_code)]`** — bringing total memory safety to VDF verification.
+### 4. Memory Safety & Checked Fallibility
+- **`#![forbid(unsafe_code)]`**: Zero `unsafe` blocks in the entire codebase, eliminating undefined memory behavior natively.
+- **Zero Panics on Malformed Input**: All public verifier APIs return explicit `Result<_, KynVdfError>` instead of panicking on division-by-zero, buffer bounds, integer overflow, or malformed inputs.
+- **CI Linting**: Enforced with `cargo clippy --workspace -- -D warnings` and `cargo fmt --all -- --check`.
 
 
 ---

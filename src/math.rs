@@ -20,9 +20,12 @@ use num_traits::{One, Signed, Zero};
 /// coefficients during partial Euclidean reduction steps.
 ///
 /// # Panics
-/// Does not panic. Returns `BigInt::zero()` for `n = 0`.
+/// Does not panic. Returns `BigInt::zero()` for `n <= 0`.
 #[inline]
 pub fn isqrt_fourth(n: &BigInt) -> BigInt {
+    if n.is_negative() || n.is_zero() {
+        return BigInt::zero();
+    }
     let s1 = n.sqrt();
     s1.sqrt()
 }
@@ -98,8 +101,8 @@ impl Form {
     /// Returns the principal identity element $(1, 1, (1 - D) / 4)$ for discriminant $D$.
     ///
     /// The identity satisfies $e \circ f = f$ for any form $f$ in the same class group.
-    /// Requires $D \equiv 3 \pmod 4$ (standard for imaginary quadratic fields with
-    /// fundamental discriminant).
+    /// Requires $D \equiv 1 \pmod 4$ (standard for imaginary quadratic fields with
+    /// fundamental discriminant $D = -p$ where $p \equiv 3 \pmod 4$).
     pub fn identity(d: &BigInt) -> Self {
         let one = BigInt::one();
         let four = BigInt::from(4);
@@ -193,6 +196,13 @@ impl Form {
     /// Terminates because the $a$-coefficient strictly decreases each swap.
     pub fn reduce(&mut self, d: &BigInt) {
         use num_integer::Integer;
+
+        // Guard against degenerate forms (a <= 0) and indefinite discriminants (d >= 0).
+        // Reduction is mathematically defined only for positive-definite forms over negative discriminants.
+        if self.a <= BigInt::zero() || !d.is_negative() {
+            return;
+        }
+
         let two = BigInt::from(2);
         let four = BigInt::from(4);
 

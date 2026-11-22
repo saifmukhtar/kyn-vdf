@@ -160,15 +160,26 @@ pub fn is_probable_prime(n: &BigUint, rounds: usize) -> bool {
 ///   ensure the prime has the required congruence properties).
 ///
 /// # Errors
-/// Returns [`KynVdfError::InvalidDiscriminantSize`] if `length_bits` is zero or not a
-/// multiple of 8.
+/// - Returns [`KynVdfError::InvalidSeed`] if `seed` is empty.
+/// - Returns [`KynVdfError::InvalidDiscriminantSize`] if `length_bits` is zero, not a
+///   multiple of 8, or if any `bitmask` index is $\ge \text{length\_bits}$.
 pub fn hash_prime(
     seed: &[u8],
     length_bits: usize,
     bitmask: &[usize],
 ) -> Result<BigUint, KynVdfError> {
+    if seed.is_empty() {
+        return Err(KynVdfError::InvalidSeed(
+            "seed must be a non-empty byte slice".to_string(),
+        ));
+    }
     if length_bits == 0 || !length_bits.is_multiple_of(8) {
         return Err(KynVdfError::InvalidDiscriminantSize(length_bits));
+    }
+    for &b in bitmask {
+        if b >= length_bits {
+            return Err(KynVdfError::InvalidDiscriminantSize(b));
+        }
     }
 
     let mut sprout = seed.to_vec();
@@ -345,15 +356,15 @@ pub fn bqfc_compr(a: &BigInt, b: &BigInt) -> Result<CompressedForm, KynVdfError>
 ///   - The discriminant residue $t^2 \cdot D \bmod a$ is not a perfect square
 ///     (proof bytes are corrupted or tampered).
 pub fn bqfc_decompr(c: &CompressedForm, d: &BigInt) -> Result<(BigInt, BigInt), KynVdfError> {
-    // Special case: a == b (identity or generator detection)
-    if c.t.is_zero() {
-        return Ok((c.a.clone(), c.a.clone()));
-    }
-
     if c.a.is_zero() {
         return Err(KynVdfError::FormDeserializationError(
             "compressed form has zero 'a' coefficient; the proof bytes are malformed".to_string(),
         ));
+    }
+
+    // Special case: a == b (identity or generator detection)
+    if c.t.is_zero() {
+        return Ok((c.a.clone(), c.a.clone()));
     }
 
     let mut t = c.t.clone();
@@ -428,6 +439,14 @@ fn export_le(
             size
         )));
     }
+    if *offset + size > out_str.len() {
+        return Err(KynVdfError::FormDeserializationError(format!(
+            "export offset ({} + {}) exceeds output buffer length ({})",
+            *offset,
+            size,
+            out_str.len()
+        )));
+    }
     out_str[*offset..*offset + bytes.len()].copy_from_slice(&bytes);
     out_str[*offset + bytes.len()..*offset + size].fill(0);
     *offset += size;
@@ -496,12 +515,30 @@ pub fn serialize_form(form: &Form, d_bits: usize) -> Result<Vec<u8>, KynVdfError
     } else {
         (g_biguint.bits() as usize).div_ceil(8) - 1
     };
+    if g_size > 255 {
+        return Err(KynVdfError::FormDeserializationError(format!(
+            "g_size field ({g_size}) exceeds u8 representation in BQFC format"
+        )));
+    }
+    if g_size >= d_bits_rounded / 32 {
+        return Err(KynVdfError::FormDeserializationError(format!(
+            "g_size field ({}) exceeds the maximum allowed value ({}) for a {}-bit discriminant",
+            g_size,
+            d_bits_rounded / 32 - 1,
+            d_bits
+        )));
+    }
     res[1] = g_size as u8;
 
     let mut offset = 2;
     let a_bytes_len = d_bits_rounded / 16 - g_size;
     let t_bytes_len = d_bits_rounded / 32 - g_size;
     let g_bytes_len = g_size + 1;
+
+    let total_required = offset + a_bytes_len + t_bytes_len + 2 * g_bytes_len;
+    if total_required > res.len() {
+        return Err(KynVdfError::InvalidDiscriminantSize(d_bits));
+    }
 
     export_le(&compr.a, &mut res, &mut offset, a_bytes_len)?;
     let t_abs = compr.t.abs();
@@ -561,6 +598,16 @@ pub fn deserialize_form(d: &BigInt, bytes: &[u8]) -> Result<Form, KynVdfError> {
         return Form::from_abd(&a, &b, d).ok_or(KynVdfError::InvalidDiscriminantIdentity);
     }
 
+    // Enforce canonical wire format: in the slow path, only BQFC_B_SIGN (0x01) and
+    // BQFC_T_SIGN (0x02) are valid flags. Bits 0x04, 0x08, and unused upper bits (0xF0)
+    // must be zero.
+    if bytes[0] & !(BQFC_B_SIGN | BQFC_T_SIGN) != 0 {
+        return Err(KynVdfError::FormDeserializationError(
+            "Non-canonical wire format: invalid or unexpected flag bits in slow-path form"
+                .to_string(),
+        ));
+    }
+
     let d_bits = discriminant_bit_len(d)?;
     let d_bits_rounded = (d_bits + 31) & !31;
 
@@ -599,6 +646,16 @@ pub fn deserialize_form(d: &BigInt, bytes: &[u8]) -> Result<Form, KynVdfError> {
     offset += g_len;
 
     let b0_part = import_le(&bytes[offset..offset + g_len]);
+    offset += g_len;
+
+    // Enforce canonical wire format: trailing padding bytes in the 100-byte wire buffer
+    // (e.g. for sub-1024-bit discriminants) must be zero to prevent proof malleability.
+    if bytes[offset..].iter().any(|&b| b != 0) {
+        return Err(KynVdfError::FormDeserializationError(
+            "Non-canonical wire format: trailing padding bytes after compressed form must be zero"
+                .to_string(),
+        ));
+    }
 
     // Decode sign flags
     let b_sign = (bytes[0] & BQFC_B_SIGN) != 0;
@@ -624,6 +681,16 @@ pub fn deserialize_form(d: &BigInt, bytes: &[u8]) -> Result<Form, KynVdfError> {
         return Err(KynVdfError::FormDeserializationError(
             "decompressed form is not in reduced normal form; \
              the proof bytes may be corrupted or produced by an incompatible implementation"
+                .to_string(),
+        ));
+    }
+
+    // Enforce canonical wire format: identity (a=1, b=1) and generator (a=2, b=1)
+    // forms must strictly be encoded using the fast-path single flag byte (BQFC_IS_1 or BQFC_IS_GEN).
+    // Accepting them via the slow path creates duplicate valid wire encodings for the same form.
+    if form.b == BigInt::one() && (form.a == BigInt::one() || form.a == BigInt::from(2)) {
+        return Err(KynVdfError::FormDeserializationError(
+            "Non-canonical wire format: identity and generator forms must be encoded using fast-path flags"
                 .to_string(),
         ));
     }
